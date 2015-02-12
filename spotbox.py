@@ -26,10 +26,10 @@ Author: Mark Mollineaux
 ITUNESMODE = False
 
 import os
-from spotboxdata import DatasheetNotebook
-import spotboxplayback as sbplayback
-from spotboxgui import SpotboxTKInterface
-from spotboxconfig import folderconfiguration, configuration
+from spotbox.spotboxdata import DatasheetNotebook
+import spotbox.spotboxplayback as sbplayback
+from spotbox.spotboxgui import SpotboxTkInterface
+from spotbox.spotboxconfig import folderconfiguration, configuration
 
 
 if __name__ == '__main__':

@@ -23,8 +23,8 @@ class Datasheet(object):
     def add_spot(self, spotmetadata):
         try:
             spotinfo = dict(zip(self._menuheaders, [spotmetadata[ii]
-                                spotinfo['fullfilepath']=spotmetadata[0]
                                 for ii in self._indices]))
+            spotinfo['fullfilepath']=spotmetadata[0]
             self._originaldatasheet.append(spotinfo)
         except:
             # for use of importing from MEDIA folder. These should be

@@ -1,3 +1,5 @@
+import os
+
 # Directories for files:
 PARENTDIRECTORY = '/Applications/SPOTBOX/'
 

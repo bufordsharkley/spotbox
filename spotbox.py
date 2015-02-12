@@ -23,7 +23,7 @@ Author: Mark Mollineaux
 
 # Note-- non-iTunes mode is not yet implemented.
 
-ITUNESMODE = False
+ITUNESMODE = True # TODO put into config!!!
 
 import os
 from spotbox.spotboxdata import DatasheetNotebook

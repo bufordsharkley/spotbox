@@ -31,6 +31,8 @@ class iTunesPlayback(Playback):
     def __init__(self):
         import appscript
         import mactypes
+        self.appscript = appscript
+        self.mactypes = mactypes
         # TODO - number of playlists.
         self.itunes = self.appscript.app('iTunes')
         # make sure iTunes is opened???? TODO

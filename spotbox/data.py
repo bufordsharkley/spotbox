@@ -6,6 +6,20 @@ import operator
 import random
 
 
+class Spot(object):
+
+    def __init__(self, path, config):
+        components = split_file_name(path)
+        prefix = components[0]
+        try:
+            config_components = split_file_name(config[prefix], keep_slash=True)
+        except KeyError:
+            raise ValueError(path)
+        self.info = dict(zip(config_components[1:], components[1:]))
+        self.type = prefix
+        self.path = path
+
+
 class Datasheet(object):
     """list of lists (dicts?), basically. Searchable, sortable.
 
@@ -14,19 +28,14 @@ class Datasheet(object):
     """
 
     def __init__(self):
-        pass
-        #self._datasheet = []
-        #self._publicdatasheet = []
+        self._datasheet = []
+        self._publicdatasheet = []
         #self._sortedkey = None
         #self._sortedbackwards = False
         #self._source = config['file directory']
 
-    def add_spot(self, spotmetadata):
-        self._datasheet.append(spotinfo)
-        # for use of importing from MEDIA folder. These should be
-        # strictly read
-        #print 'ERROR ADDING %s TO DATASHEET' % spotmetadata
-        # TODO - remove from datasheet, or else indices will be screwed up
+    def add_spot(self, spot):
+        self._datasheet.append(spot)
 
     def search(self, searchterm):
         # TODO - always returns from original ordering...
@@ -75,26 +84,21 @@ class Datasheet(object):
 
 class DatasheetNotebook(object):
     """An object that holds all information about the spotbox files"""
+    """From media folder , pull out all files and create dict by header."""
 
     def __init__(self, media_directory, file_config):
         #self._currentdatasheet = None
         #self._lastdatasheet = None
+        print file_config
         self._datasheets = {spottype: Datasheet() for spottype in file_config}
-        #self._media_directory = media_directory
-        # Create a list of static headers
-        """From media folder , pull out all files and create dict by header."""
         for path in all_spotbox_files(media_directory):
-            filenamecomponents = split_file_name(path)
-            spot_type = filenamecomponents[0]
-            if spot_type not in file_config:
-                continue
-            #print file_config[spot_type]
-            #    self._datasheets[testkey].add_spot(filenamecomponents)
-            #for menukey in menu_config:
-            #if (configuration[menukey]['static or polling'] == 'static'
-        #    self.get_datasheets_from_media_folder(menukey)
-        #for datasheet in self._datasheets:
-        #    datasheet.freshen()
+            try:
+                spot = Spot(path, file_config)
+            except ValueError:
+                pass
+            self._datasheets[spot.type].add_spot(spot)
+        for datasheet in self._datasheets.values():
+            datasheet.freshen()
 
     def __iter__(self):
         """allows iteration through the datasheets in the notebook"""
@@ -107,18 +111,17 @@ class DatasheetNotebook(object):
         """
         return self._datasheets[key]
 
-    @property
-    def currentdatasheet(self):
-        return self._currentdatasheet
-
-    @currentdatasheet.setter
-    def currentdatasheet(self, datasheet):
-        # set the currentsheet, and then freshen the old sheet.
-        # so it's re-randomized, etc, before you get to it again
-        oldsheet = self._currentdatasheet
-        self._currentdatasheet = datasheet
-        if oldsheet is not None:
-            oldsheet.freshen()
+    #@property
+    #def currentdatasheet(self):
+        #return self._currentdatasheet
+    #@currentdatasheet.setter
+    #def currentdatasheet(self, datasheet):
+        ## set the currentsheet, and then freshen the old sheet.
+        ## so it's re-randomized, etc, before you get to it again
+        #oldsheet = self._currentdatasheet
+        #self._currentdatasheet = datasheet
+        #if oldsheet is not None:
+            #oldsheet.freshen()
 
     def subject_from_filepath(self, filepath):
         try:
@@ -158,9 +161,11 @@ def merge_file_and_format(filename, format):
                                        fillvalue=''))
 
 
-def split_file_name(filename):
+def split_file_name(filename, keep_slash=False):
     """Extracts metadata (underscore-separated)"""
-    basename = os.path.splitext(os.path.basename(filename))[0]
+    if not keep_slash:
+        filename = os.path.basename(filename)
+    basename = os.path.splitext(filename)[0]
     return tuple(basename.split('_'))
 
     # Hard-coded way to disregard 'Icon' files (stupid Mac thing):
@@ -168,7 +173,6 @@ def split_file_name(filename):
 
 
 def all_spotbox_files(media_dir):
-    """Go into folder, and track all files. only look at files, and not hidden files"""
     paths = [os.path.join(media_dir, fname) for fname in os.listdir(media_dir)
              if not fname.startswith('.')]
     return (x for x in paths if os.path.isfile(x))

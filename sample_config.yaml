@@ -32,7 +32,7 @@ menus:
         width: 1
       - field: Added
         width: 1
-  - file format: LID_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
+  - file format: LID_Time_Subject_Description_LID Type_Year.extension
     headers:
       - field: Subject
         width: 22
@@ -44,7 +44,7 @@ menus:
         width: 15
       - field: Year
         width: 1
-  - file format: PROMO_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
+  - file format: PROMO_Time_KZSU Show_DJ_Day/Time_Voice/Author_Added_Now?_Soundbed.extension
     headers:
       - field: Time
         width: 5
@@ -60,7 +60,7 @@ menus:
         width: 1
       - field: Now?
         width: 1
-  - file format: SFX_Author_Outro_Kill_Added.extension
+  - file format: SFX_Time_Sound Effect_Description_Type.extension
     headers:
       - field: Time
         width: 5
@@ -70,7 +70,7 @@ menus:
         width: 44
       - field: Type
         width: 25
-  - file format: THEME_Jklx_Author_Outro_Kill_Added.extension
+  - file format: THEME_Time_Theme_Description_KZSU Show_KZSU DJ.extension
     headers:
       - field: Time
         width: 5
@@ -82,7 +82,7 @@ menus:
         width: 16
       - field: KZSU DJ
         width: 15
-  - file format: UW_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
+  - file format: UW_Time_Underwriting_Soundbed_Voice/Author_Outro_Kill_Added.extension
     headers:
       - field: Time
         width: 4

@@ -72,7 +72,7 @@ class LoadAndPlayButtons(tk.Frame, object):
         self.pack()
 
         stop = tk.Button(self, text="STOP", command=self._stop)
-        help = tk.Button(self, text="HELP", command=self._help)
+        help = tk.Button(self, text="HELP", command=self._open_github)
         spottexts = [tk.StringVar() for _ in playlists]
         labels = [tk.Label(self, textvariable=text) for text in spottexts]
         loaders = [tk.Button(self, text='LOAD' + str(ii+1),
@@ -108,15 +108,8 @@ class LoadAndPlayButtons(tk.Frame, object):
         for countdown in self.countdowns:
             countdown.cancel_and_reset()
 
-    def _help(self):
-        window = tk.Toplevel()
-        window.title('Help')
-        helplabel = tk.Label(window, text='see github:bufordsharkley/spotbox.')
-        helplabel.pack()
-        def callback(event):
-            webbrowser.open_new(r"http://www.github.com/bufordsharkley/spotbox")
-        helplabel.bind("<Button-1>", callback)
-        window.geometry("500x250")
+    def _open_github(self):
+        webbrowser.open_new(r"http://www.github.com/bufordsharkley/spotbox")
 
     def _loadspot(self, spottext, spotnumber):
         """ Loads file into given playlist
@@ -240,13 +233,18 @@ class MenuOfSpots(tk.Frame, object):
                             exportselection=tk.FALSE)
                 for ii, (header, frame) in enumerate(zip(headers, frames))]
         for column in self._allcolumns:
+            print column
             column.pack(expand=tk.YES, fill=tk.BOTH)
             column.bind('<B1-Motion>', lambda e, s=self: s._select(e.y))
             column.bind('<Button-1>', lambda e, s=self: s._select(e.y))
             column.bind('<Leave>', lambda e: 'break')
             column.bind('<B2-Motion>', lambda e, s=self: s._select(e.y))
             column.bind('<Button-2>', lambda e, s=self: s._select(e.y))
-            column.bind('<MouseWheel>', self._mousewheel)
+            # Mousewheel for OSX
+            column.bind('<MouseWheel>', lambda e: self._mousewheel(-e.delta))
+            # Mousewheel for Ubuntu
+            column.bind('<Button-4>', lambda e: self._mousewheel(-1))
+            column.bind('<Button-5>', lambda e: self._mousewheel(1))
 
         self._headerlist = [tk.StringVar() for _ in headers]
 
@@ -272,7 +270,6 @@ class MenuOfSpots(tk.Frame, object):
         self.fillwithcontent()
 
     def fillwithcontent(self):
-        return
         self._fill_with(self._datasheet)
         self._turn_all_arrows_off()
 
@@ -321,10 +318,10 @@ class MenuOfSpots(tk.Frame, object):
         self._parent.filepathtoload = self._datasheet.get_filepath_for_index(row)
         return 'break'
 
-    def _mousewheel(self, event):
+    def _mousewheel(self, delta):
         for column in self._allcolumns:
-            column.yview("scroll", -event.delta, "units")
-        return "break"
+            column.yview("scroll", delta, "units")
+        return 'break'
 
     def _scroll(self, *args):
         for column in self._allcolumns:
@@ -369,8 +366,7 @@ class MenuOfSpots(tk.Frame, object):
         self._delete(0, tk.END)
         fillablecontent = datasheet.fillable()
         for spot in fillablecontent:
-            # spot = dict of fields, with ...
-            spotcontent = [spot[header] for header in self._headertext]
+            spotcontent = [spot.info[header] for header in self._headertext]
             self._insert(tk.END, spotcontent)
 
     def searchby(self, searchterm):
@@ -413,6 +409,7 @@ class Header(object):
         self.searchbox.pack()
         categoryselect.pack()
 
+        # TODO - no, needs to go back to this.
         """
         graphicw.grid(row=0, column=0)
         buttonarray.grid(row=0, column=1)
@@ -435,8 +432,9 @@ class Menus(object):
     def __init__(self, master, datasheets, config):
         defaultkey = config.order[0]  # Defaults to first in order.
         self._datasheets = datasheets
-        self._allmenus = {key: MenuOfSpots(master, self, key, config.headers[key],
-            datasheets.get_fresh_sheet_by_key(key)) for key in config.order}
+        self._allmenus = {key: MenuOfSpots(master, self, key,
+                config.headers[key], datasheets.get_fresh_sheet_by_key(key))
+                for key in config.order}
 
         for menu in self:
             menu.fillwithcontent()

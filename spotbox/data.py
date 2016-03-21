@@ -44,13 +44,15 @@ class Datasheet(object):
         self._publicdatasheet = [spot for spot in self._publicdatasheet if
                                  any(searchterm.lower() in spot[header].lower()
                                      for header in spot)]
+    def __getitem__(self, index):
+        return self._datasheet[index]
 
     def __iter__(self):
         # allows to iterate through all spots in the datasheet
         return iter(self._publicdatasheet)
 
     def get_filepath_for_index(self, index):
-        return self._publicdatasheet[index]['fullfilepath']
+        return self._publicdatasheet[index].path
 
     def fillable(self):
         """return the public contents in a form useable for the menu GUI"""
@@ -124,6 +126,7 @@ class DatasheetNotebook(object):
             #oldsheet.freshen()
 
     def subject_from_filepath(self, filepath):
+        raise NotImplementedError
         try:
             justthefilename = filepath.split('/')[-1]
             key = justthefilename.split('_')[0]
@@ -138,6 +141,7 @@ class DatasheetNotebook(object):
 
     def time_from_filepath(self, filepath):
         # returns integer
+        raise NotImplementedError
         try:
             justthefilename = os.path.basename(filepath)
             key = justthefilename.split('_')[0]

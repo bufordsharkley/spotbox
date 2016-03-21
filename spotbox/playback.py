@@ -27,10 +27,10 @@ class StubPlayback(Playback):
         print('LOADING {} ({})'.format(spotnumber, filepath))
 
     def play(self, spotnumber):
-        print('PLAYING {} ({})'.format(spotnumber, filepath))
+        print('PLAYING {}'.format(spotnumber))
 
     def stop(self):
-        print('STOPPING {} ({})'.format(spotnumber, filepath))
+        print('STOPPING')
 
 
 class iTunesPlayback(Playback):

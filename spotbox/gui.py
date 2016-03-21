@@ -114,18 +114,18 @@ class LoadAndPlayButtons(tk.Frame, object):
     def _loadspot(self, spottext, spotnumber):
         """ Loads file into given playlist
 
-        Takes the file name currently stored as filepathtoload in data module,
+        Takes the file name currently stored as spot_to_load in data module,
         clears playlist and places respective file into playlist, read to be
         played. Also loads counter with the correct amount of time, based upon
         the metadata in the file.
         """
         # TODO: detect if playlist is currently playing,
         # and don't allow overwrite
-        if not self._menus.filepathtoload:
+        if self._menus.spot_to_load is None:
             print "NOTHING TO LOAD"
             return
-        self._playback.load(spotnumber, self._menus.filepathtoload)
-        spottext.set(self._menus.filesubjecttoload)
+        self._playback.load(spotnumber, self._menus.spot_to_load)
+        spottext.set(self._menus.subject)
         self.countdowns[spotnumber].load(seconds=self._menus.filetimetoload)
 
     def _playspot(self, spotnumber):
@@ -315,7 +315,7 @@ class MenuOfSpots(tk.Frame, object):
         row = self._allcolumns[0].nearest(y)
         self._selection_clear(0, tk.END)
         self._selection_set(row)
-        self._parent.filepathtoload = self._datasheet.get_filepath_for_index(row)
+        self._parent.spot_to_load = self._datasheet[row]
         return 'break'
 
     def _mousewheel(self, delta):
@@ -441,10 +441,10 @@ class Menus(object):
 
         self._currentmenu = self._allmenus[defaultkey]
         self._currentmenu.pack(expand=True, fill=tk.BOTH)
-        self._filepathtoload = None
-        self._subjecttoload = None
+        self._spot_to_load = None
         self._timetoload = None
 
+    """
     @property
     def filepathtoload(self):
         # the last file (full path) that the user clicked:
@@ -458,10 +458,7 @@ class Menus(object):
             self.filepathtoload)
         self._timetoload = self._datasheets.time_from_filepath(
             self.filepathtoload)
-
-    @property
-    def filesubjecttoload(self):
-        return self._subjecttoload
+    """
 
     @property
     def filetimetoload(self):

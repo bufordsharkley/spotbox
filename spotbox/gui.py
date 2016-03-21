@@ -257,7 +257,8 @@ class MenuOfSpots(tk.Frame, object):
                                borderwidth=1,
                                relief=tk.RAISED)
                             for frame, headerstring in zip(frames, self._headerlist)]
-        for label in self._labellist:
+        print self._labellist
+        for ii, label in enumerate(self._labellist):
             label.pack(fill=tk.X)
             label.bind('<Button-1>', lambda e, ii=ii: self._sort(ii))
         self._numberofcolumns = ii
@@ -275,6 +276,7 @@ class MenuOfSpots(tk.Frame, object):
 
     def _sort(self, columnnumber):
         # get key from columnnumber ...
+        print columnnumber
         sortkey = self._headertext[columnnumber]
         # okay, that's fine. (but should be passed earlier?)
         self._datasheet.sort_by_key(sortkey)  # sure.

@@ -30,8 +30,8 @@ class Datasheet(object):
     def __init__(self):
         self._datasheet = []
         self._publicdatasheet = []
-        #self._sortedkey = None
-        #self._sortedbackwards = False
+        self._sortedkey = None
+        self._sortedbackwards = False
         #self._source = config['file directory']
 
     def add_spot(self, spot):
@@ -63,8 +63,8 @@ class Datasheet(object):
         sortbackwards = (True if self._sortedkey == key and not
                          self._sortedbackwards else False)
         self._publicdatasheet = sorted(self._publicdatasheet,
-                                       key=operator.itemgetter(key),
-                                       reverse=sortbackwards)
+                key=lambda x: x.info[key], reverse=sortbackwards)
+        print key
         self._sortedkey = key
         self._sortedbackwards = sortbackwards
 

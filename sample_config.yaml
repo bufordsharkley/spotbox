@@ -1,0 +1,100 @@
+# SPOTBOX CONFIGURATION:
+
+#Follow the format for configuring your menus:
+#(
+#for each key, which for media files is also the first token in a filename for a file of this type
+# button order      : ordering for the radio buttons in header in GUI
+# TODO no, just order of entries
+# title             : Name that appears next to radio buttons
+# headers      : The header text/widths for each menu (tuples) (in order)
+# index timer       : which index is for time [important for countdown display]
+# index subject     : which index is for text display (integer) [appears next to play button]
+#
+
+who am i: KZSU
+media directory: /home/mgm/Desktop/SPOTBOX/MEDIA
+spot count: 3
+graphic: /home/mgm/Desktop/SPOTBOX/spotboxgraphicsmall.gif
+menus:
+  - file format: PSA_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
+    headers:
+      - field: Subject
+        width: 37
+      - field: Time
+        width: 4
+      - field: Soundbed
+        width: 23
+      - field: Voice/Author
+        width: 22
+      - field: Outro
+        width: 1
+      - field: Kill
+        width: 1
+      - field: Added
+        width: 1
+  - file format: LID_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
+    headers:
+      - field: Subject
+        width: 22
+      - field: Time
+        width: 4
+      - field: Description
+        width: 45
+      - field: LID Type
+        width: 15
+      - field: Year
+        width: 1
+  - file format: PROMO_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
+    headers:
+      - field: Time
+        width: 5
+      - field: KZSU Show
+        width: 24
+      - field: Soundbed
+        width: 24
+      - field: Day/Time
+        width: 17
+      - field: Voice/Author
+        width: 20
+      - field: Added
+        width: 1
+      - field: Now?
+        width: 1
+  - file format: SFX_Author_Outro_Kill_Added.extension
+    headers:
+      - field: Time
+        width: 5
+      - field: Sound Effect
+        width: 21
+      - field: Description
+        width: 44
+      - field: Type
+        width: 25
+  - file format: THEME_Jklx_Author_Outro_Kill_Added.extension
+    headers:
+      - field: Time
+        width: 5
+      - field: Theme
+        width: 21
+      - field: Description
+        width: 33
+      - field: KZSU Show
+        width: 16
+      - field: KZSU DJ
+        width: 15
+  - file format: UW_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
+    headers:
+      - field: Time
+        width: 4
+      - field: Underwriting
+        width: 37
+      - field: Soundbed
+        width: 23
+      - field: Voice/Author
+        width: 22
+      - field: Outro
+        width: 1
+      - field: Kill
+        width: 1
+      - field: Added
+        width: 1

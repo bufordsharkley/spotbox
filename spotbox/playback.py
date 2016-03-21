@@ -1,36 +1,47 @@
-#!/usr/bin/python
-
 """SPOTBOX media playback backend"""
 
-# Note-- non-iTunes mode is not yet fully implemented.
+
 
 
 class Playback:
     """A playback object, allows for audio files to be loaded, played back,
     and stopped whilst playing.
     """
-    def __init__(self):
-        pass
 
-    def initialize_one_player(self, spotnumber):
-        pass
+    #def initialize_one_player(self, spotnumber):
+    #    raise NotImplementedError
 
     def load(self, spotnumber, filepath):
-        pass
+        raise NotImplementedError
 
     def play(self, spotnumber):
-        pass
+        raise NotImplementedError
 
     def stop(self):
-        pass
+        raise NotImplementedError
+
+
+class StubPlayback(Playback):
+
+    def load(self, spotnumber, filepath):
+        print('LOADING {} ({})'.format(spotnumber, filepath))
+
+    def play(self, spotnumber):
+        print('PLAYING {} ({})'.format(spotnumber, filepath))
+
+    def stop(self):
+        print('STOPPING {} ({})'.format(spotnumber, filepath))
 
 
 class iTunesPlayback(Playback):
     # imperfect: itunes volume/ repeat mode is not currently handled directly.
 
     def __init__(self):
-        import appscript
-        import mactypes
+        try:
+            import appscript
+            import mactypes
+        except ImportError:
+            raise RuntimeError('you shouldnt use itunes mode')
         # TODO - number of playlists.
         self.itunes = self.appscript.app('iTunes')
         # make sure iTunes is opened???? TODO
@@ -97,5 +108,4 @@ class PygletPlayback(Playback):
     def play(self, spotnumber):
         self.playerarray[spotnumber].play()
 
-if __name__ == '__main__':
-    pass
+valid_modes = {'ITUNES': iTunesPlayback, 'STUB': StubPlayback}

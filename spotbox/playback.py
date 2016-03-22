@@ -1,14 +1,12 @@
 """SPOTBOX media playback backend"""
 
 
-
-
 class Playback:
     """A playback object, allows for audio files to be loaded, played back,
     and stopped whilst playing.
     """
 
-    #def initialize_one_player(self, spotnumber):
+    # def initialize_one_player(self, spotnumber):
     #    raise NotImplementedError
 
     def load(self, spotnumber, filepath):
@@ -47,14 +45,14 @@ class iTunesPlayback(Playback):
         # make sure iTunes is opened???? TODO
         # USEFUL: applescript directory:
         # http://www.mugginsoft.com/html/kosmictask/ASDictionaryDocs/Apple/
-        #iTunes/OS-X-10.7/iTunes-10.6.1/html/
+        # iTunes/OS-X-10.7/iTunes-10.6.1/html/
 
     def initialize_one_player(self, spotnumber):
         # iTunes doesn't need to, assuming the playlists
         # have been created (TODO - check?)
-        #try:
+        # try:
         #    tab.visible()
-        #except:
+        # except:
         #   throw a toplevel warning to create such a playlist...
         pass
 

@@ -19,8 +19,8 @@ class Countdown(tk.Label, object):
         self._callbacks = []
 
     def load(self, seconds):
+        self._update_text(format_time(seconds))
         self._original_time = seconds
-        self._update_text(format_time(self._original_time))
 
     def _update_text(self, newtext, running=False):
         if running:
@@ -111,7 +111,7 @@ class LoadAndPlayButtons(tk.Frame, object):
     def _open_github(self):
         webbrowser.open_new(r"http://www.github.com/bufordsharkley/spotbox")
 
-    def _loadspot(self, spottext, spotnumber):
+    def _loadspot(self, spottext, index):
         """ Loads file into given playlist
 
         Takes the file name currently stored as spot_to_load in data module,
@@ -124,9 +124,12 @@ class LoadAndPlayButtons(tk.Frame, object):
         if self._menus.spot_to_load is None:
             print "NOTHING TO LOAD"
             return
-        self._playback.load(spotnumber, self._menus.spot_to_load)
-        spottext.set(self._menus.spot_to_load.subject)
-        self.countdowns[spotnumber].load(seconds=self._menus.filetimetoload)
+        spot = self._menus.spot_to_load
+        self._playback.load(index, spot)
+        spottext.set('test')
+        self.countdowns[index].load(seconds=18)
+        #spottext.set(spot.subject)
+        #self.countdowns[index].load(seconds=spot.time)
 
     def _playspot(self, spotnumber):
         self._playback.play(spotnumber)
@@ -196,7 +199,7 @@ class SearchBox(tk.Frame, object):
 
     def _search(self):
         searchterm = self._searchstring.get()
-        self._menus.searchby(searchterm)
+        self._menus.search(searchterm)
 
     def _clear(self):
         self.clear_text()
@@ -209,6 +212,7 @@ class SearchBox(tk.Frame, object):
 
 class MenuOfSpots(tk.Frame, object):
     """A menu object. Contains all metadata in columns, and also scrollbar"""
+
     def __init__(self, master, menusobject, key, headers, datasheet):
         super(MenuOfSpots, self).__init__(master)
         self.key = key
@@ -233,7 +237,6 @@ class MenuOfSpots(tk.Frame, object):
                             exportselection=tk.FALSE)
                 for ii, (header, frame) in enumerate(zip(headers, frames))]
         for column in self._allcolumns:
-            print column
             column.pack(expand=tk.YES, fill=tk.BOTH)
             column.bind('<B1-Motion>', lambda e, s=self: s._select(e.y))
             column.bind('<Button-1>', lambda e, s=self: s._select(e.y))
@@ -257,7 +260,6 @@ class MenuOfSpots(tk.Frame, object):
                                borderwidth=1,
                                relief=tk.RAISED)
                             for frame, headerstring in zip(frames, self._headerlist)]
-        print self._labellist
         for ii, label in enumerate(self._labellist):
             label.pack(fill=tk.X)
             label.bind('<Button-1>', lambda e, ii=ii: self._sort(ii))
@@ -276,7 +278,6 @@ class MenuOfSpots(tk.Frame, object):
 
     def _sort(self, columnnumber):
         # get key from columnnumber ...
-        print columnnumber
         sortkey = self._headertext[columnnumber]
         # okay, that's fine. (but should be passed earlier?)
         self._datasheet.sort_by_key(sortkey)  # sure.
@@ -287,25 +288,13 @@ class MenuOfSpots(tk.Frame, object):
         self._update_the_sort_labels(columnnumber)
 
     def _update_the_sort_labels(self, columnnumber):
-        # the unicode manipulation here should be abstracted TODO
-        if self._sortedcolumn == columnnumber and not self._sortedbackwards:
-            # update the arrow in the header:
-            self._headerlist[columnnumber].set(
-                self._headerlist[columnnumber].get()[:-1] + UPARROW)
-            self._labellist[columnnumber].configure(
-                text=self._headerlist[columnnumber].get())
-            self._sortedbackwards = True
-        else:
-            # if that's not the case, it's essentially
-            # a column being sorted the first time.
-            # Give it a down arrow, and turn all the other arrows off.
+        glyph = UPARROW if self._sortedbackwards else DOWNARROW
+        if self._sortedcolumn != columnnumber:
             self._turn_all_arrows_off()
-            # append the down arrow to the last position:
-            self._headerlist[columnnumber].set(
-                self._headerlist[columnnumber].get()[:-1] + DOWNARROW)
-            self._labellist[columnnumber].configure(
-                text=self._headerlist[columnnumber].get())
-            self._sortedbackwards = False
+        # update the arrow in the header:
+        header = self._headerlist[columnnumber]
+        header.set(header.get()[:-1] + glyph)
+        self._labellist[columnnumber].configure(text=header.get())
         self._sortedcolumn = columnnumber
 
     def _turn_all_arrows_off(self):
@@ -368,10 +357,10 @@ class MenuOfSpots(tk.Frame, object):
         self._delete(0, tk.END)
         fillablecontent = datasheet.fillable()
         for spot in fillablecontent:
-            spotcontent = [spot.info[header] for header in self._headertext]
-            self._insert(tk.END, spotcontent)
+            self._insert(tk.END,
+                         [spot.info[header] for header in self._headertext])
 
-    def searchby(self, searchterm):
+    def search(self, searchterm):
         self._datasheet.search(searchterm)
         self._fill_with(self._datasheet)
         # AND RESET HEADERS FOR SORT SYMBOLS, ETC
@@ -455,8 +444,14 @@ class Menus(object):
         self._currentmenu.pack(expand=True, fill=tk.BOTH)
         oldmenu.freshen()
 
-    def searchby(self, searchterm):
-        self._currentmenu.searchby(searchterm)
+    def search(self, searchterm):
+        return self._currentmenu.search(searchterm)
+
+# class GUIState(object):
+
+# currentmenu
+# spot_to_load
+
 
 
 class SpotboxGUI(tk.Tk, object):

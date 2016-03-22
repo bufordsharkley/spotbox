@@ -34,7 +34,7 @@ from spotbox import config
               type=click.Choice(playback.valid_modes.keys()))
 @click.option('--config-file', help='configuration file for spotbox')
 def main(config_file, playback_mode):
-    if config is None:
+    if config_file is None:
         raise RuntimeError('Please pass --config')
     cfg = config.process_raw_config_file(config_file)
     datasheets = data.DatasheetNotebook(cfg.media_directory, cfg.file_config)

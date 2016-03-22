@@ -125,7 +125,7 @@ class LoadAndPlayButtons(tk.Frame, object):
             print "NOTHING TO LOAD"
             return
         self._playback.load(spotnumber, self._menus.spot_to_load)
-        spottext.set(self._menus.subject)
+        spottext.set(self._menus.spot_to_load.subject)
         self.countdowns[spotnumber].load(seconds=self._menus.filetimetoload)
 
     def _playspot(self, spotnumber):
@@ -432,39 +432,17 @@ class Menus(object):
     coordinated through this object.
     """
     def __init__(self, master, datasheets, config):
-        defaultkey = config.order[0]  # Defaults to first in order.
-        self._datasheets = datasheets
-        self._allmenus = {key: MenuOfSpots(master, self, key,
-                config.headers[key], datasheets.get_fresh_sheet_by_key(key))
-                for key in config.order}
-
-        for menu in self:
+        self._allmenus = {key: MenuOfSpots(master, self, key, config.headers[key],
+                                           datasheets.get_fresh_sheet_by_key(key))
+                          for key in config.order}
+        for menu in self._allmenus.values():
             menu.fillwithcontent()
 
-        self._currentmenu = self._allmenus[defaultkey]
+        # Defaults to first in order.
+        self._currentmenu = self._allmenus[config.order[0]]
         self._currentmenu.pack(expand=True, fill=tk.BOTH)
-        self._spot_to_load = None
-        self._timetoload = None
-
-    """
-    @property
-    def filepathtoload(self):
         # the last file (full path) that the user clicked:
-        return self._filepathtoload
-
-    @filepathtoload.setter
-    def filepathtoload(self, newpath):
-        self._filepathtoload = newpath
-        # also update the subject and time fields for header:
-        self._subjecttoload = self._datasheets.subject_from_filepath(
-            self.filepathtoload)
-        self._timetoload = self._datasheets.time_from_filepath(
-            self.filepathtoload)
-    """
-
-    @property
-    def filetimetoload(self):
-        return self._timetoload
+        self._spot_to_load = None
 
     def update_menus_by_key(self, newkey):
         """Called by menu selector. Clears current menu, packs new menu,
@@ -474,16 +452,8 @@ class Menus(object):
         self._currentmenu.pack_forget()
         oldmenu = self._currentmenu
         self._currentmenu = self._allmenus[newkey]
-        # if new menu is static, load from existing version. if polling,
-        # it needs to be queried
-        #if self._currentmenu.static_or_polling == 'polling':
-        # if it's polling, needs to be queried:
-        #self._currentmenu.query()
         self._currentmenu.pack(expand=True, fill=tk.BOTH)
         oldmenu.freshen()
-
-    def __iter__(self):
-        return iter(self._allmenus.values())
 
     def searchby(self, searchterm):
         self._currentmenu.searchby(searchterm)

@@ -67,6 +67,10 @@ class SpotTests(unittest.TestCase):
         spot = data.Spot(path, self.config)
         self.assertEqual(spot.info, {'boom/boom': 'hello', 'bap': 'there'})
 
+    def test_spot_finds_subject(self):
+        path = 'LID_hello_there.mp3'
+        spot = data.Spot(path, self.config)
+        self.assertEqual(spot.subject, 'hello')
 
 if __name__ == '__main__':
     unittest.main()

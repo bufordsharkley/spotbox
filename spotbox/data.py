@@ -30,29 +30,26 @@ class Datasheet(object):
     def __init__(self):
         self._datasheet = []
         self._publicdatasheet = []
+
+    def _blippy(self):
+        # Figure out what this means
         self._sortedkey = None
         self._sortedbackwards = False
-        #self._source = config['file directory']
 
     def add_spot(self, spot):
         self._datasheet.append(spot)
 
     def search(self, searchterm):
-        # TODO - always returns from original ordering...
-        # filters base datasheet for string...
         self.freshen()
         self._publicdatasheet = [spot for spot in self._publicdatasheet if
-                                 any(searchterm.lower() in spot[header].lower()
-                                     for header in spot)]
+                                 any(searchterm.lower() in header.lower()
+                                     for header in spot.info.values())]
     def __getitem__(self, index):
         return self._datasheet[index]
 
     def __iter__(self):
         # allows to iterate through all spots in the datasheet
         return iter(self._publicdatasheet)
-
-    def get_filepath_for_index(self, index):
-        return self._publicdatasheet[index].path
 
     def fillable(self):
         """return the public contents in a form useable for the menu GUI"""
@@ -64,24 +61,14 @@ class Datasheet(object):
                          self._sortedbackwards else False)
         self._publicdatasheet = sorted(self._publicdatasheet,
                 key=lambda x: x.info[key], reverse=sortbackwards)
-        print key
         self._sortedkey = key
         self._sortedbackwards = sortbackwards
 
     def freshen(self):
         # when datasheet is brought to top, it resets its filter and randomizes
         self._publicdatasheet = self._datasheet
-        self._sortedkey = None
-        self._sortedbackwards = False
+        self._blippy()
         random.shuffle(self._publicdatasheet)
-
-    def query_source(self):
-        """ go to source directory directly and check files in folder"""
-        for spotbox_file in all_spotbox_files(self._source):
-            try:
-                self.add_spot(spot_info)
-            except:
-                print 'problem adding polling to datasheet. MAJOR PROBLEM'
 
 
 class DatasheetNotebook(object):

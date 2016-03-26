@@ -1,3 +1,4 @@
 nose
 click
 pyyaml
+mock

@@ -1,6 +1,8 @@
 import copy
 import unittest
 
+import mock
+
 from spotbox import config
 
 OK_CONFIG = {
@@ -122,6 +124,17 @@ class ProcessTests(unittest.TestCase):
     def test_graphic_correct(self):
         processed = config.process_raw_config(self.raw_config)
         self.assertEqual(processed.graphic, '/path/to/graphic.gif')
+
+    @mock.patch('os.path.expanduser', autospec=True)
+    def test_home_directory_paths_are_expanded(self, expand_mock):
+        expand_mock.return_value = '/your/expanded/path'
+        self.raw_config['graphic'] = '~/graphic'
+        self.raw_config['media directory'] = '~/mediadir'
+        processed = config.process_raw_config(self.raw_config)
+        self.assertEqual(processed.graphic, '/your/expanded/path')
+        self.assertEqual(processed.media_directory, '/your/expanded/path')
+
+
 
 if __name__ == '__main__':
     unittest.main()

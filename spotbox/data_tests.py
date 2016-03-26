@@ -40,8 +40,8 @@ class SplitTests(unittest.TestCase):
 
 
 
-FILE_CONFIG = {'LID': 'LID_boom_bap.extension',
-               'PROMO': 'PROMO_who_what_where.extension'}
+FILE_CONFIG = {'LID': 'LID_time_boom_bap.extension',
+               'PROMO': 'PROMO_time_who_what_where.extension'}
 
 
 class SpotTests(unittest.TestCase):
@@ -55,20 +55,42 @@ class SpotTests(unittest.TestCase):
             spot = data.Spot(path, self.config)
 
     def test_spot_resolves_if_correct(self):
-        path = 'LID_hello_there.mp3'
+        path = 'LID_0.23_hello_there.mp3'
         spot = data.Spot(path, self.config)
-        self.assertEqual(spot.info, {'boom': 'hello', 'bap': 'there'})
+        self.assertEqual(spot.info, {'boom': 'hello', 'bap': 'there',
+                                     'time': '0.23'})
         self.assertEqual(spot.type, 'LID')
         self.assertEqual(spot.path, path)
 
     def test_spot_resolves_even_if_slash_in_format(self):
-        path = 'LID_hello_there.mp3'
-        self.config['LID'] = 'LID_boom/boom_bap.extension'
+        path = 'LID_0.23_hello_there.mp3'
+        self.config['LID'] = 'LID_time_boom/boom_bap.extension'
         spot = data.Spot(path, self.config)
-        self.assertEqual(spot.info, {'boom/boom': 'hello', 'bap': 'there'})
+        self.assertEqual(spot.info, {'boom/boom': 'hello', 'bap': 'there',
+                                     'time': '0.23'})
 
-    def test_spot_finds_subject(self):
-        path = 'LID_hello_there.mp3'
+    def test_spot_finds_time_and_translates_to_seconds(self):
+        path = 'LID_0.23_hello_there.mp3'
+        spot = data.Spot(path, self.config)
+        self.assertEqual(spot.time, 23)
+        path = 'LID_1.23_hello_there.mp3'
+        spot = data.Spot(path, self.config)
+        self.assertEqual(spot.time, 83)
+
+    def test_spot_finds_time_if_its_capitalized(self):
+        path = 'LID_0.23_hello_there.mp3'
+        self.config['LID'] = 'LID_Time_boom_bap.extension'
+        spot = data.Spot(path, self.config)
+        self.assertEqual(spot.time, 23)
+
+    def test_spot_puts_first_nontime_entry_as_subject(self):
+        path = 'LID_0.23_hello_there.mp3'
+        spot = data.Spot(path, self.config)
+        self.assertEqual(spot.subject, 'hello')
+
+    def test_spot_puts_subject_even_if_capitalized(self):
+        path = 'LID_0.23_hello_there.mp3'
+        self.config['LID'] = 'LID_time_Boom_bap.extension'
         spot = data.Spot(path, self.config)
         self.assertEqual(spot.subject, 'hello')
 

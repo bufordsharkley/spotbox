@@ -1,3 +1,4 @@
+import os
 import yaml
 
 
@@ -16,13 +17,12 @@ def process_raw_config_file(filename):
 
 def process_raw_config(raw_config):
     resp = Config()
-    resp.media_directory = raw_config['media directory']
+    resp.media_directory = os.path.expanduser(raw_config['media directory'])
+    resp.graphic = os.path.expanduser(raw_config['graphic'])
     resp.entity = raw_config['who am i']
     resp.num_spots = raw_config['spot count']
-    resp.graphic = raw_config['graphic']
     resp.file_config = _process_file_config(raw_config['menus'])
     resp.menu_config = _process_menu_config(raw_config['menus'])
-
     return resp
 
 
@@ -37,7 +37,6 @@ def _prefix_from_file_format(file_format):
 
 
 class MenuConfig(object):
-
     pass
 
 def _process_menu_config(raw_menu_config):

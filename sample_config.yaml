@@ -12,9 +12,9 @@
 #
 
 who am i: KZSU
-media directory: /tmp/MEDIA
+media directory: ~/Desktop/SPOTBOX/MEDIA
 spot count: 3
-graphic: /tmp/spotboxgraphicsmall.gif
+graphic: ~/Desktop/SPOTBOX/spotboxgraphicsmall.gif
 menus:
   - file format: PSA_Time_Subject_Soundbed_Voice/Author_Outro_Kill_Added.extension
     headers:

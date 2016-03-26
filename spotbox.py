@@ -37,7 +37,14 @@ def main(config_file, playback_mode):
     if config_file is None:
         raise RuntimeError('Please pass --config')
     cfg = config.process_raw_config_file(config_file)
-    datasheets = data.DatasheetNotebook(cfg.media_directory, cfg.file_config)
+    datasheets = {spottype: data.Datasheet() for spottype in cfg.file_config}
+    for path in data.all_spotbox_files(cfg.media_directory):
+        try:
+            spot = data.Spot(path, cfg.file_config)
+            datasheets[spot.type].add_spot(spot)
+        except ValueError:
+            print path
+    # Resolve the playback_mode string:
     playback_obj = playback.valid_modes[playback_mode]()
     spotboxgui = gui.SpotboxGUI(cfg, datasheets, playback_obj)
     spotboxgui.run_continuously()

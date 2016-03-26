@@ -63,11 +63,11 @@ def format_time(seconds):
 class LoadAndPlayButtons(tk.Frame, object):
     """Grid of load and play buttons, plus stop and help buttons"""
 
-    def __init__(self, master, menus, playback, number_of_playlists):
+    def __init__(self, master, menus, playback_obj, playback_count):
         super(LoadAndPlayButtons, self).__init__(master)
 
-        playlists = range(number_of_playlists)
-        self._playback = playback
+        playlists = range(playback_count)
+        self._playback = playback_obj
         self._menus = menus
         self.pack()
 
@@ -75,7 +75,8 @@ class LoadAndPlayButtons(tk.Frame, object):
         help = tk.Button(self, text="HELP", command=self._open_github)
         spottexts = [tk.StringVar() for _ in playlists]
         labels = [tk.Label(self, textvariable=text) for text in spottexts]
-        loaders = [tk.Button(self, text='LOAD' + str(ii+1),
+        loaders = [tk.Button(self,
+                             text='LOAD' + str(ii+1),
                              command=lambda ii=ii: self._loadspot(spottexts[ii], ii))
                    for ii in playlists]
         players = [tk.Button(self, text='PLAY' + str(ii+1),
@@ -126,10 +127,8 @@ class LoadAndPlayButtons(tk.Frame, object):
             return
         spot = self._menus.spot_to_load
         self._playback.load(index, spot)
-        spottext.set('test')
-        self.countdowns[index].load(seconds=18)
-        #spottext.set(spot.subject)
-        #self.countdowns[index].load(seconds=spot.time)
+        self.countdowns[index].load(seconds=spot.time)
+        spottext.set(spot.subject)
 
     def _playspot(self, spotnumber):
         self._playback.play(spotnumber)
@@ -143,38 +142,31 @@ class LoadAndPlayButtons(tk.Frame, object):
 
 class CategorySelect(tk.Frame, object):
     """The radio buttons that select between menus"""
+
     def __init__(self, master, order, menus, header):
         super(CategorySelect, self).__init__(master)
         # assumes that it's being called from header... note: ???
-        self._headerobject = header
-        self.order = order
-        self._menus = menus
 
         self.pack()
         self.menumode = tk.IntVar()
-        self.menumode.set(1)  # this guy is one-indexed... TODO magic number
-        radiobuttontypes = [(key, index+1) for index, key in enumerate(order)]
-        # TODO
-        # this currently displays LID, PSA, NEWS, SFX,
+        self.menumode.set(0)
+        # TODO this currently displays LID, PSA, NEWS, SFX,
         # instead of "Sound Effects" etc.
-        for index, typetuple in enumerate(radiobuttontypes):
+        for index, text in enumerate(order):
             tk.Radiobutton(self,
-                           text=typetuple[0],
+                           text=text,
                            variable=self.menumode,
                            command=self._update_menus,
-                           value=typetuple[1]).grid(row=0, column=index)
-
-    @property
-    def _currentkey(self):
-        # the menumode is the index of the radio button selected, but
-        # one-indexed a correction is made, and the lookup table (used
-        # to construct the radio buttons' order) is used to find key
-        return self.order[self.menumode.get() - 1]
+                           value=index).grid(row=0, column=index)
+        self._order = order
+        self._menus = menus
+        self._header = header
 
     def _update_menus(self):
         """Give the menus object the new key, have it update what is shown"""
-        self._menus.update_menus_by_key(self._currentkey)
-        self._headerobject.cleanup_after_change()
+        key = self._order[self.menumode.get()]
+        self._menus.switch_to(key)
+        self._header.update()
 
 
 class SearchBox(tk.Frame, object):
@@ -182,24 +174,25 @@ class SearchBox(tk.Frame, object):
 
     def __init__(self, master, menus):
         super(SearchBox, self).__init__(master)
+        search = tk.Button(self, text="Search", command=self._search)
+        clear = tk.Button(self, text="Clear", command=self._clear)
+
+        clear.grid(row=0, column=0)
+        search.grid(row=0, column=2)
+
+        searchstring = tk.StringVar()
+        searchstring.set('')
+
+        searchentry = tk.Entry(self, textvariable=searchstring)
+        searchentry.grid(row=0, column=1)
+        searchentry.bind('<Return>', lambda e: self._search())
+
         self._menus = menus
-        tk.Button(self,
-                  text="Search",
-                  command=self._search).grid(row=0, column=2)
-        tk.Button(self,
-                  text="Clear",
-                  command=self._clear).grid(row=0, column=0)
-
-        self._searchstring = tk.StringVar()
-        self._searchstring.set('')
-
-        self._searchentry = tk.Entry(self, textvariable=self._searchstring)
-        self._searchentry.grid(row=0, column=1)
-        self._searchentry.bind('<Return>', lambda e: self._search())
+        self._searchstring = searchstring
+        self._searchentry = searchentry
 
     def _search(self):
-        searchterm = self._searchstring.get()
-        self._menus.search(searchterm)
+        self._menus.search(self._searchstring.get())
 
     def _clear(self):
         self.clear_text()
@@ -213,202 +206,183 @@ class SearchBox(tk.Frame, object):
 class MenuOfSpots(tk.Frame, object):
     """A menu object. Contains all metadata in columns, and also scrollbar"""
 
-    def __init__(self, master, menusobject, key, headers, datasheet):
+    def __init__(self, master, menusobject, header_info, datasheet):
         super(MenuOfSpots, self).__init__(master)
-        self.key = key
-        self._datasheet = datasheet
-        self._parent = menusobject
-
-        # Which column is currently sorted, and how?
-        # Defaults to -1 (no column is currently sorted):
-        self._sortedcolumn = None
-        self._sortedbackwards = False
 
         # each frame is a new column in the multi-column menu
-        frames = [tk.Frame(self) for _ in headers]
+        frames = [tk.Frame(self) for _ in header_info]
         for frame in frames:
             frame.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
 
-        self._allcolumns = [tk.Listbox(frame,
-                            width=header['width'],
-                            borderwidth=0,
-                            selectborderwidth=0,
-                            relief=tk.FLAT,
-                            exportselection=tk.FALSE)
-                for ii, (header, frame) in enumerate(zip(headers, frames))]
-        for column in self._allcolumns:
-            column.pack(expand=tk.YES, fill=tk.BOTH)
-            column.bind('<B1-Motion>', lambda e, s=self: s._select(e.y))
-            column.bind('<Button-1>', lambda e, s=self: s._select(e.y))
-            column.bind('<Leave>', lambda e: 'break')
-            column.bind('<B2-Motion>', lambda e, s=self: s._select(e.y))
-            column.bind('<Button-2>', lambda e, s=self: s._select(e.y))
-            # Mousewheel for OSX
-            column.bind('<MouseWheel>', lambda e: self._mousewheel(-e.delta))
-            # Mousewheel for Ubuntu
-            column.bind('<Button-4>', lambda e: self._mousewheel(-1))
-            column.bind('<Button-5>', lambda e: self._mousewheel(1))
+        headers, labels = self._initialize_headers(header_info, frames)
 
-        self._headerlist = [tk.StringVar() for _ in headers]
+        self._columns = [tk.Listbox(frame,
+                                    width=info['width'],
+                                    borderwidth=0,
+                                    selectborderwidth=0,
+                                    relief=tk.FLAT,
+                                    exportselection=tk.FALSE)
+                        for (info, frame) in zip(header_info, frames)]
 
-        self._headertext = [x['field'] for x in headers]
-        for bip, x in zip(self._headerlist, self._headertext):
-            bip.set(u'{} {}'.format(x, DIAMOND))
+        for column in self._columns:
+            self._bind_column(column)
 
-        self._labellist = [tk.Label(frame,
-                               text=headerstring.get(),
-                               borderwidth=1,
-                               relief=tk.RAISED)
-                            for frame, headerstring in zip(frames, self._headerlist)]
-        for ii, label in enumerate(self._labellist):
+        scrollbar = tk.Scrollbar(self, orient=tk.VERTICAL, command=self._scroll)
+        self._columns[0]['yscrollcommand'] = scrollbar.set
+
+        # Pack:
+        for label in labels:
             label.pack(fill=tk.X)
+        for column in self._columns:
+            column.pack(expand=tk.YES, fill=tk.BOTH)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # attributes to remember:
+        self._datasheet = datasheet
+        # TODO - parent only called for spot to load--
+        self._parent = menusobject
+        self._headers = headers
+        self._labels = labels
+
+        self._sortedcolumn = None
+        self._sortreversed = False
+
+    def _initialize_headers(self, header_info, frames):
+        headers = [tk.StringVar() for _ in header_info]
+
+        for header, info in zip(headers, header_info):
+            header.set(u'{} {}'.format(info['field'], DIAMOND))
+
+        labels = [tk.Label(frame,
+                           text=header.get(),
+                           borderwidth=1,
+                           relief=tk.RAISED)
+                  for frame, header in zip(frames, headers)]
+        for ii, label in enumerate(labels):
             label.bind('<Button-1>', lambda e, ii=ii: self._sort(ii))
-        self._numberofcolumns = ii
-        sb = tk.Scrollbar(self, orient=tk.VERTICAL, command=self._scroll)
-        self._allcolumns[0]['yscrollcommand'] = sb.set
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        return headers, labels
 
-    def refresh(self):
-        #self._datasheet = datasheets.get_fresh_sheet_by_key(self.key)
-        self.fillwithcontent()
+    @staticmethod
+    def _text_from_header(header):
+        # ends with space then glyph...
+        return header.get()[:-2]
 
-    def fillwithcontent(self):
-        self._fill_with(self._datasheet)
-        self._turn_all_arrows_off()
+    def _bind_column(self, column):
+        column.bind('<B1-Motion>', lambda e, s=self: s._select(e.y))
+        column.bind('<Button-1>', lambda e, s=self: s._select(e.y))
+        column.bind('<Leave>', lambda e: 'break')
+        column.bind('<B2-Motion>', lambda e, s=self: s._select(e.y))
+        column.bind('<Button-2>', lambda e, s=self: s._select(e.y))
+        # Mousewheel for OSX
+        column.bind('<MouseWheel>', lambda e: self._mousewheel(-e.delta))
+        # Mousewheel for Ubuntu
+        column.bind('<Button-4>', lambda e: self._mousewheel(-1))
+        column.bind('<Button-5>', lambda e: self._mousewheel(1))
 
-    def _sort(self, columnnumber):
-        # get key from columnnumber ...
-        sortkey = self._headertext[columnnumber]
-        # okay, that's fine. (but should be passed earlier?)
-        self._datasheet.sort_by_key(sortkey)  # sure.
-        # crashes for menus without . fix, TODO
-        # (that is, menus with emergency fill)
-        self._fill_with(self._datasheet)
-        # update the information on currently sorted column:
-        self._update_the_sort_labels(columnnumber)
+    def refresh(self, reset_spots=False):
+        # delete all, then insert all.
+        if reset_spots:
+            self._datasheet.reset()
+        for column in self._columns:
+            column.delete(0, tk.END)
+        for spot in self._datasheet:
+            spot_fields = [spot.info[self._text_from_header(header).lower()]
+                           for header in self._headers]
+            for ii, column in enumerate(self._columns):
+                column.insert(tk.END, spot_fields[ii])
 
-    def _update_the_sort_labels(self, columnnumber):
-        glyph = UPARROW if self._sortedbackwards else DOWNARROW
-        if self._sortedcolumn != columnnumber:
+    def _sort(self, column_index):
+        key = self._text_from_header(self._headers[column_index])
+        self._datasheet.sort(key, reverse=self._sortreversed)
+        # Toggle the reversed field:
+        self._sortreversed = not self._sortreversed
+        self.refresh()
+        self._update_sort_label(column_index)
+
+    def _update_sort_label(self, column_index):
+        if self._sortedcolumn != column_index:
             self._turn_all_arrows_off()
-        # update the arrow in the header:
-        header = self._headerlist[columnnumber]
-        header.set(header.get()[:-1] + glyph)
-        self._labellist[columnnumber].configure(text=header.get())
-        self._sortedcolumn = columnnumber
+            self._sortedcolumn = column_index
+        glyph = UPARROW if self._sortreversed else DOWNARROW
+        header = self._headers[column_index]
+        label = self._labels[column_index]
+        self._update_header_with_glyph(header, label, glyph)
 
     def _turn_all_arrows_off(self):
-        for index, header in enumerate(self._headerlist):
-            header.set(header.get()[:-1] + DIAMOND)
-            self._labellist[index].configure(text=header.get())
+        for index, header in enumerate(self._headers):
+            label = self._labels[index]
+            self._update_header_with_glyph(header, label, glyph=DIAMOND)
+
+    @staticmethod
+    def _update_header_with_glyph(header, label, glyph):
+        header.set(header.get()[:-1] + glyph)
+        label.configure(text=header.get())
 
     def _select(self, y):
-        row = self._allcolumns[0].nearest(y)
+        row = self._columns[0].nearest(y)
         self._selection_clear(0, tk.END)
         self._selection_set(row)
         self._parent.spot_to_load = self._datasheet[row]
+        # Stops each pane from being selected:
         return 'break'
-
-    def _mousewheel(self, delta):
-        for column in self._allcolumns:
-            column.yview("scroll", delta, "units")
-        return 'break'
-
-    def _scroll(self, *args):
-        for column in self._allcolumns:
-            column.yview(*args)
-
-    def _delete(self, first, last=None):
-        for column in self._allcolumns:
-            column.delete(first, last)
-
-    def get(self, first, last=None):
-        result = []
-        for l in self._allcolumns:
-            result.append(l.get(first, last))
-        if last:
-            return map(None, *result)
-        return result
-
-    def index(self, index):
-        self._allcolumns[0].index(index)
-
-    def _insert(self, index, *elements):
-        for e in elements:
-            for ii, column in enumerate(self._allcolumns):
-                column.insert(index, e[ii])
-
-    def numcols(self):
-        return self._numberofcolumns
 
     def _selection_clear(self, first, last=None):
-        for column in self._allcolumns:
+        for column in self._columns:
             column.selection_clear(first, last)
 
     def _selection_set(self, first, last=None):
-        for column in self._allcolumns:
+        for column in self._columns:
             column.selection_set(first, last)
 
-    def _fill_with(self, datasheet):
-        """Take a datasheet, make a copy of the list (so items can be removed
-        without problem) iterate through take datasheet and load into the
-        thing... Take list of list (metadata for all files), and load into menu
-        """
-        self._delete(0, tk.END)
-        fillablecontent = datasheet.fillable()
-        for spot in fillablecontent:
-            self._insert(tk.END,
-                         [spot.info[header] for header in self._headertext])
+    def _mousewheel(self, delta):
+        for column in self._columns:
+            column.yview("scroll", delta, "units")
+        # An ancient tkinter trick from the old country:
+        return 'break'
+
+    def _scroll(self, *args):
+        for column in self._columns:
+            column.yview(*args)
 
     def search(self, searchterm):
         self._datasheet.search(searchterm)
-        self._fill_with(self._datasheet)
-        # AND RESET HEADERS FOR SORT SYMBOLS, ETC
+        self.refresh()
         self._turn_all_arrows_off()
 
-    def freshen(self):
-        self._datasheet.freshen()
-        self._fill_with(self._datasheet)
-
-    def query(self):
-        """used for polling menus. updates datasheet from source."""
-        self._datasheet.query_source()
-        self._fill_with(self._datasheet)
 
 
-class Header(object):
+class Header(tk.Frame, object):
     """Header object. In charge of coordinating behavior of
     all widgets in header frame.
     """
-    def __init__(self, master, menus, lookuptable, playback, config):
-        newframe = tk.Frame(master)
-        newframe.pack()
+    def __init__(self, master, menus, lookuptable, playback_obj, config):
+        super(Header, self).__init__(master)
+        #newframe = tk.Frame(master)
+        #newframe.pack()
+        self.pack()
         # the widgets that live in the header
-        buttonarray = LoadAndPlayButtons(newframe, menus, playback, config.num_spots)
-        categoryselect = CategorySelect(newframe, lookuptable.order, menus, self)
-        self.searchbox = SearchBox(newframe, menus)
+        buttonarray = LoadAndPlayButtons(self, menus, playback_obj, config.num_spots)
+        categoryselect = CategorySelect(self, lookuptable.order, menus, self)
+        self.searchbox = SearchBox(self, menus)
 
         # add the graphic...
         graphicfile = config.graphic
         graphic = tk.PhotoImage(file=graphicfile)
-        graphicw = tk.Label(master, image=graphic)
+        graphicw = tk.Label(self, image=graphic)
         graphicw.image = graphic
 
         # organize and pack the insides, and then itself:
-        graphicw.pack()
-        buttonarray.pack()
-        self.searchbox.pack()
-        categoryselect.pack()
+        categoryselect.pack(side=tk.BOTTOM, fill=tk.X)
+        self.searchbox.pack(side=tk.BOTTOM, fill=tk.X)
+        buttonarray.pack(side=tk.RIGHT, fill=tk.BOTH)
+        graphicw.pack(side=tk.LEFT)
 
-        # TODO - no, needs to go back to this.
-        """
-        graphicw.grid(row=0, column=0)
-        buttonarray.grid(row=0, column=1)
-        self.searchbox.grid(row=2, column=0)
-        categoryselect.grid(row=2, column=1)
-        """
+        #graphicw.grid(row=0, column=0)
+        #buttonarray.grid(row=0, column=1)
+        #self.searchbox.grid(row=2, column=0)
+        #categoryselect.grid(row=2, column=1)
 
-    def cleanup_after_change(self):
+    def update(self):
         # currently, only cleanup is clearing search box:
         self.searchbox.clear_text()
 
@@ -421,28 +395,28 @@ class Menus(object):
     coordinated through this object.
     """
     def __init__(self, master, datasheets, config):
-        self._allmenus = {key: MenuOfSpots(master, self, key, config.headers[key],
-                                           datasheets.get_fresh_sheet_by_key(key))
+        self._menus = {key: MenuOfSpots(master, self, config.headers[key],
+                                           datasheets[key])
                           for key in config.order}
-        for menu in self._allmenus.values():
-            menu.fillwithcontent()
+        for menu in self._menus.values():
+            menu.refresh(reset_spots=True)
 
         # Defaults to first in order.
-        self._currentmenu = self._allmenus[config.order[0]]
+        self._currentmenu = self._menus[config.order[0]]
         self._currentmenu.pack(expand=True, fill=tk.BOTH)
         # the last file (full path) that the user clicked:
         self._spot_to_load = None
 
-    def update_menus_by_key(self, newkey):
-        """Called by menu selector. Clears current menu, packs new menu,
+    def switch_to(self, newkey):
+        """Clears current menu, packs new menu,
         and then fills the menu that was just cleared (in order that you
         don't have to wait for menu to be randomized/etc.
         """
         self._currentmenu.pack_forget()
         oldmenu = self._currentmenu
-        self._currentmenu = self._allmenus[newkey]
+        self._currentmenu = self._menus[newkey]
         self._currentmenu.pack(expand=True, fill=tk.BOTH)
-        oldmenu.freshen()
+        oldmenu.refresh(reset_spots=True)
 
     def search(self, searchterm):
         return self._currentmenu.search(searchterm)
@@ -451,12 +425,12 @@ class Menus(object):
 
 # currentmenu
 # spot_to_load
-
+# playback object
 
 
 class SpotboxGUI(tk.Tk, object):
 
-    def __init__(self, config, datasheets, playback):
+    def __init__(self, config, datasheets, playback_obj):
         super(SpotboxGUI, self).__init__()
 
         self.title('{} Spotbox'.format(config.entity))
@@ -471,7 +445,7 @@ class SpotboxGUI(tk.Tk, object):
         menuframe = tk.Frame(overallframe)
         menuframe.pack(expand=True, fill=tk.BOTH)
         menus = Menus(menuframe, datasheets, config.menu_config)
-        header = Header(headerframe, menus, config.menu_config, playback, config)
+        header = Header(headerframe, menus, config.menu_config, playback_obj, config)
         # an object that maintains all menus; info about spots to load
         # similar object for coordinating header widgets
         overallframe.pack(expand=True, fill=tk.BOTH)

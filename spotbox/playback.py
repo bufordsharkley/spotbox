@@ -1,14 +1,16 @@
 """SPOTBOX media playback backend"""
 
+import os
+import stat
+import subprocess
+import time
+
+
 
 class Playback:
     """A playback object, allows for audio files to be loaded, played back,
     and stopped whilst playing.
     """
-
-    # def initialize_one_player(self, spotnumber):
-    #    raise NotImplementedError
-
     def load(self, spotnumber, filepath):
         raise NotImplementedError
 
@@ -21,8 +23,8 @@ class Playback:
 
 class StubPlayback(Playback):
 
-    def load(self, spotnumber, filepath):
-        print('LOADING {} ({})'.format(spotnumber, filepath))
+    def load(self, spotnumber, spot):
+        print('LOADING {} ({})'.format(spotnumber, spot))
 
     def play(self, spotnumber):
         print('PLAYING {}'.format(spotnumber))
@@ -59,7 +61,7 @@ class iTunesPlayback(Playback):
     def stop(self):
         self.itunes.stop()
 
-    def load(self, spotnumber, filepath):
+    def load(self, spotnumber, spot):
         playlisttoload = self.itunes.playlists['SPOTBOX' + str(spotnumber + 1)]
         playlisttracks = playlisttoload.tracks()
         if len(playlisttracks) > 0:
@@ -82,28 +84,39 @@ class iTunesPlayback(Playback):
         self.itunes.play(self.itunes.playlists['SPOTBOX'+str(spotnumber+1)])
 
 
-class PygletPlayback(Playback):
+class MplayerPlayback(Playback):
 
     def __init__(self):
-        import pyglet
-        self.playerarray = []
-
-    def initialize_one_player(self, spotnumber):
-        pygplayer = self.pyglet.media.Player()
-        self.playerarray.append(pygplayer)
+        self._chambers = {ii: None for ii in range(3)}
+        path = '/tmp/spotboxfifo'
+        if not os.path.exists(path):
+            os.mkfifo(path)
+        if not stat.S_ISFIFO(os.stat(path).st_mode):
+            raise RuntimeError('{} is not a FIFO'.format(path))
+        try:
+            devnull = open(os.devnull, 'w')
+            subprocess.check_call(['lsof', path], stdout=devnull, stderr=devnull)
+        except subprocess.CalledProcessError:
+            command = ('gnome-terminal --command="mplayer '
+                    '-slave -idle -input file={}"').format(path)
+            subprocess.check_call(command, shell=True)
 
     def stop(self):
-        for player in self.playerarray:
-            player.pause()
+        with open('/tmp/spotboxfifo', 'w') as f:
+            f.write('stop\n')
 
-    def load(self, spotnumber, filepath):
-        # at moment, throws "NOT A WAVE" exception, even for .wav
-        print filepath
-        media = self.pyglet.media.load(filepath, streaming=False)
-        del self.playerarray[spotnumber]
-        self.playerarray[spotnumber].queue(media)
+    def load(self, spotnumber, spot):
+        self._chambers[spotnumber] = spot
 
     def play(self, spotnumber):
-        self.playerarray[spotnumber].play()
+        spot = self._chambers[spotnumber]
+        command = 'loadfile "{}"'.format(spot.path)
+        with open('/tmp/spotboxfifo', 'w') as f:
+            f.write('volume 100 1\n')
+            f.write(command + '\n')
 
-valid_modes = {'ITUNES': iTunesPlayback, 'STUB': StubPlayback}
+
+
+valid_modes = {'ITUNES': iTunesPlayback,
+               'STUB': StubPlayback,
+               'MPLAYER': MplayerPlayback}

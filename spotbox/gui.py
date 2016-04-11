@@ -17,6 +17,7 @@ class Countdown(tk.Label, object):
         super(Countdown, self).__init__(master)
         self._original_time = None
         self._callbacks = []
+        self.running = False
 
     def load(self, seconds):
         self._update_text(format_time(seconds))
@@ -28,6 +29,7 @@ class Countdown(tk.Label, object):
         self.configure(text=newtext)
 
     def kick_off(self):
+        self.running = True
         self._cancel_callbacks()  # When already-running job kicked off again.
         remaining = self._original_time
         self._continue_countdown(remaining)
@@ -41,6 +43,7 @@ class Countdown(tk.Label, object):
 
     def cancel_and_reset(self):
         """Stops running of counter, and resets at its initial value."""
+        self.running = False
         self._cancel_callbacks()
         if self._original_time is not None:
             self._update_text(format_time(self._original_time))
@@ -126,6 +129,8 @@ class LoadAndPlayButtons(tk.Frame, object):
             print "NOTHING TO LOAD"
             return
         spot = self._menus.spot_to_load
+        if self.countdowns[index].running:
+            return
         self._playback.load(index, spot)
         self.countdowns[index].load(seconds=spot.time)
         spottext.set(spot.subject)

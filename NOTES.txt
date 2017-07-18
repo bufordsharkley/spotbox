@@ -1,0 +1,4 @@
+mplayer for OSX - 
+ln -s /Applications/MPlayer\ OSX\ Extended.app/Contents/Resources/Binaries/mpextended.mpBinaries/Contents/MacOS/mplayer /usr/bin/mplayer
+
+

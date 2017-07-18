@@ -97,8 +97,11 @@ class MplayerPlayback(Playback):
             devnull = open(os.devnull, 'w')
             subprocess.check_call(['lsof', path], stdout=devnull, stderr=devnull)
         except subprocess.CalledProcessError:
-            command = ('gnome-terminal --command="mplayer '
+            if False:
+                command = ('gnome-terminal --command="mplayer '
                     '-slave -idle -input file={}"').format(path)
+            else:
+                command = 'open -b com.apple.terminal /tmp/shell.sh'
             subprocess.check_call(command, shell=True)
 
     def stop(self):

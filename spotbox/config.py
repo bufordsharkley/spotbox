@@ -23,6 +23,10 @@ def process_raw_config(raw_config):
     resp.num_spots = raw_config['spot count']
     resp.file_config = _process_file_config(raw_config['menus'])
     resp.menu_config = _process_menu_config(raw_config['menus'])
+    try:
+        resp.mplayer = raw_config['mplayer binary']
+    except KeyError:
+        pass
     return resp
 
 

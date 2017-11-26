@@ -45,7 +45,7 @@ def main(config_file, playback_mode):
         except ValueError:
             print path
     # Resolve the playback_mode string:
-    playback_obj = playback.valid_modes[playback_mode]()
+    playback_obj = playback.valid_modes[playback_mode](cfg)
     spotboxgui = gui.SpotboxGUI(cfg, datasheets, playback_obj)
     spotboxgui.run_continuously()
 
